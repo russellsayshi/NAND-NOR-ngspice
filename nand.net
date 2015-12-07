@@ -1,0 +1,43 @@
+*source C:\Users\s2047117\Documents\CoolSpice\MyNetLists\nand.txt
+
+.include "../Models/MOSIS.txt"
+.param vdd=1.8
+Vsupply vdd 0 vdd
+.global vdd
+Cload 0 nandOut 0.2pf
+
+VVinA inA 0  pulse(0 vdd 0.95n .1n .1n 3.9n 8n)
+VVinB inB 0  pulse(0 vdd 2.95n .1n .1n 7.9n 16n)
+
+.subckt inv in out wp=1u wn=1u
+Mn1 out in 0 0 ibm0p13nmos W='wn' L=0.12u
+Mp1 out in vdd vdd ibm0p13pmos W='wp' L=0.13u
+.ends
+
+.subckt nand inA inB out wp=2u wn=1u
+Mp1 vdd inA out vdd ibm0p13nmos W='wp' L=0.13u
+Mp2 vdd inB out vdd ibm0p13nmos W='wp' L=0.13u
+Mn2 out inB mid 0 ibm0p13nmos W='wn' L=0.12u
+Mn1 mid inA 0 0 ibm0p13nmos W='wn' L=0.12u
+.ends
+
+*input conditioning
+xinvA1 inA midA inv wp=2.5u wn=1u
+xinvA2 midA nandA inv wp=2.5u wn=1u
+xinvB1 inB midB inv wp=2.5u wn=1u
+xinvB2 midB nandB inv wp=2.5u wn=1u
+*NAND gate
+xnand1 nandA nandB nandOut nand wp=5u wn=2u
+
+.tran 5p 28n 0n
+.end
+.meas tran tplh_b1af TRIG V(inA) val='vdd/2.0' fall=1 targ V(nandOut) val='vdd/2.0' rise=1
+.meas tran tplh_a1bf TRIG V(inB) val='vdd/2.0' fall=1 targ V(nandOut) val='vdd/2.0' rise=2
+.meas tran tphl_arb1 TRIG V(inA) val='vdd/2.0' rise=2 targ V(nandOut) val='vdd/2.0' fall=2
+.meas tran tphl_a1br TRIG V(inB) val='vdd/2.0' rise=2 targ V(nandOut) val='vdd/2.0' fall=3
+
+
+.control
+run
+plot v(nandA) v(nandB) v(nandOut)
+.endc
